@@ -8,6 +8,7 @@
 
 module cache_storage (
     input clk,
+    input reset,
     input write_enable,
     input [1:0] index,
     input [3:0] tag_in,
@@ -23,21 +24,23 @@ module cache_storage (
     reg valid_array [0:3];
 
     integer i;
-    initial begin
-        for (i = 0; i < 4; i = i + 1) begin
-            valid_array[i] = 0;
-        end
-    end
 
-    always @(posedge clk) begin
-        if (write_enable) begin
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            for (i = 0; i < 4; i = i + 1) begin
+                valid_array[i] <= 1'b0;
+            end
+            tag_out   <= 4'b0;
+            data_out  <= 8'b0;
+            valid_out <= 1'b0;
+        end else if (write_enable) begin
             tag_array[index]   <= tag_in;
             data_array[index]  <= data_in;
-            valid_array[index] <= 1;
+            valid_array[index] <= 1'b1;
 
             tag_out   <= tag_in;
             data_out  <= data_in;
-            valid_out <= 1;
+            valid_out <= 1'b1;
         end else begin
             tag_out   <= tag_array[index];
             data_out  <= data_array[index];
@@ -146,6 +149,7 @@ module cache_controller (
 
     cache_storage storage_inst (
         .clk(clk),
+        .reset(reset),
         .write_enable(cache_write),
         .index(index_in),
         .tag_in(tag_in),
@@ -182,23 +186,15 @@ endmodule
 
 // Tiny Tapeout wrapper: maps the fixed TT pin interface onto cache_controller
 module tt_um_vinutha_cache_controller (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered
-    input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+    input  wire [7:0] ui_in,
+    output wire [7:0] uo_out,
+    input  wire [7:0] uio_in,
+    output wire [7:0] uio_out,
+    output wire [7:0] uio_oe,
+    input  wire       ena,
+    input  wire       clk,
+    input  wire       rst_n
 );
-
-    // Pin mapping:
-    // ui_in[0]     -> request
-    // ui_in[2:1]   -> index_in
-    // ui_in[6:3]   -> tag_in
-    // uio_in[6:0]  -> mem_data_in[6:0] (top bit tied to 0)
-    // uo_out[7:0]  -> data_out
-    // uio_out[7]   -> done
 
     wire reset      = ~rst_n;
     wire request    = ui_in[0];
