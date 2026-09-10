@@ -1,7 +1,7 @@
 # Tiny Tapeout project information
 project:
   title:        "Direct-Mapped Cache Controller"
-  author:       "Vinutha S T"
+  author:       "Vinutha S T, Yatin Sangwan"
   discord:      ""
   description:  "A 4-line direct-mapped, write-through cache controller with hit/miss/eviction FSM control logic."
   language:     "Verilog"
